@@ -1,0 +1,44 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial gsm(7, 8);
+
+#define pir 2
+
+bool mot = false;
+unsigned long last = 0;
+const unsigned long wait = 20000;
+
+void setup() {
+  pinMode(pir, INPUT);
+  Serial.begin(9600);
+  gsm.begin(9600);
+  gsm.println("AT");
+  delay(1000);
+  gsm.println("AT+CMGF=1");
+  delay(1000);
+}
+
+void loop() {
+  int p = digitalRead(pir);
+  if (p == HIGH && !mot) {
+    mot = true;
+    unsigned long now = millis();
+    if (now - last >= wait) {
+      sendSMS();
+      last = now;
+    }
+  } else if (p == LOW) {
+    mot = false;
+  }
+}
+
+void sendSMS() {
+  gsm.println("AT+CMGF=1");
+  delay(500);
+  gsm.println("AT+CMGS=\"+911234567890\"");
+  delay(500);
+  gsm.println("Motion detected!");
+  delay(500);
+  gsm.write(26);
+  delay(2000);
+}
