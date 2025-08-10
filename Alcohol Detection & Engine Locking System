@@ -1,0 +1,28 @@
+const int sensorPin = A0;
+const int buzzerPin = 8;
+const int ledPin = 7;
+const int relayPin = 6;
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(relayPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int alcoholLevel = analogRead(sensorPin);
+  Serial.println(alcoholLevel);
+
+  if (alcoholLevel < 400) { 
+    digitalWrite(buzzerPin, HIGH);
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(relayPin, LOW);  
+  } else {
+    digitalWrite(buzzerPin, LOW);
+    digitalWrite(ledPin, LOW);
+    digitalWrite(relayPin, HIGH); 
+  }
+
+  delay(500);
+}
