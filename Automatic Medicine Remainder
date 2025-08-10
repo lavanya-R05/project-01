@@ -1,0 +1,43 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial gsm(7, 8);
+
+#define bz 3
+
+unsigned long lastT = 0;
+const unsigned long gap = 8UL * 60UL * 60UL * 1000UL;
+
+void setup() {
+  pinMode(bz, OUTPUT);
+  Serial.begin(9600);
+  gsm.begin(9600);
+  gsm.println("AT");
+  delay(1000);
+  gsm.println("AT+CMGF=1");
+  delay(1000);
+}
+
+void loop() {
+  unsigned long t = millis();
+  if (t - lastT >= gap) {
+    alert();
+    lastT = t;
+  }
+}
+
+void alert() {
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(bz, HIGH);
+    delay(500);
+    digitalWrite(bz, LOW);
+    delay(500);
+  }
+  gsm.println("AT+CMGF=1");
+  delay(500);
+  gsm.println("AT+CMGS=\"+911234567890\"");
+  delay(500);
+  gsm.println("Time to take your medicine!");
+  delay(500);
+  gsm.write(26);
+  delay(2000);
+}
