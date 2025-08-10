@@ -1,0 +1,72 @@
+% Specify the image file
+image_file = 'liver_image.jpeg';
+
+% Check if the file exists
+if exist(image_file, 'file') == 2
+    % Read the image
+    img = imread(image_file);
+else
+    error('File not found: %s', image_file);
+end
+
+% If the image is RGB, convert it to grayscale
+if size(img, 3) == 3
+    gray_img = rgb2gray(img);
+else
+    gray_img = img;  % Image is already grayscale
+end
+
+% Resize the image to 256x256
+resized_img = imresize(gray_img, [256, 256]);
+figure, imshow(resized_img, []);
+title('Original Image');
+
+% Apply a Gaussian filter to reduce noise
+filtered_img = imgaussfilt(resized_img, 2);
+
+% Use Otsu's method for thresholding to create a binary image
+level = graythresh(filtered_img);  
+binary_img = imbinarize(filtered_img, level);
+figure, imshow(binary_img);
+title('Binary Image after Thresholding');
+
+% Perform morphological operation to clean up the image (remove small objects)
+se = strel('disk', 3);  % Disk-shaped structuring element
+cleaned_img = imopen(binary_img, se);
+
+% Label the connected components (tumor regions)
+[labeled_img, num_objects] = bwlabel(cleaned_img);
+figure, imshow(labeled_img, []);
+title(['Segmented Tumor Regions (Objects: ', num2str(num_objects), ')']);
+
+% Extract properties of the regions (e.g., Area, Perimeter, Eccentricity)
+stats = regionprops(labeled_img, 'Area', 'Perimeter', 'Eccentricity');
+features = [];
+
+% Store the extracted features in a matrix
+for i = 1:num_objects
+    features = [features; stats(i).Area, stats(i).Perimeter, stats(i).Eccentricity];
+end
+
+% Display the extracted features
+disp('Extracted Features:');
+disp(features);
+
+% Dummy training data (Example feature vectors for training)
+training_features = [150, 250, 0.85; 120, 200, 0.90; 80, 180, 0.75];
+labels = [1; 1; 0];  % 1 = malignant, 0 = benign (for training)
+
+% Train a Support Vector Machine (SVM) classifier
+svm_model = fitcsvm(training_features, labels);
+
+% Predict the labels for the extracted tumor regions
+predicted_labels = predict(svm_model, features);
+
+% Display the predicted labels
+disp('Predicted Labels for Tumors:');
+disp(predicted_labels);
+
+% Visualize the labeled tumor regions with different colors
+labeled_img_rgb = label2rgb(labeled_img, 'spring', 'k', 'shuffle');
+figure, imshow(labeled_img_rgb);
+title('Tumor Regions Highlighted');
